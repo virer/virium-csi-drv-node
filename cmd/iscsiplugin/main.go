@@ -27,6 +27,7 @@ import (
 var (
 	endpoint = flag.String("endpoint", "unix:///csi/csi.sock", "CSI endpoint")
 	nodeID   = flag.String("nodeid", "", "node id")
+	apiURL   = flag.String("apiurl", "http://virium-isci-fqdn.domain.tld:8787", "Virium api url")
 )
 
 func init() {
@@ -40,6 +41,6 @@ func main() {
 }
 
 func handle() {
-	d := iscsi.NewDriver(*nodeID, *endpoint)
+	d := iscsi.NewDriver(*nodeID, *endpoint, *apiURL)
 	d.Run()
 }

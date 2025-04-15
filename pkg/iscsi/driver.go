@@ -29,24 +29,26 @@ type driver struct {
 	nodeID   string
 	version  string
 	endpoint string
+	apiURL   string
 	cap      []*csi.VolumeCapability_AccessMode
 	cscap    []*csi.ControllerServiceCapability
 }
 
 const (
-	driverName = "iscsi.csi.k8s.io"
+	driverName = "virium-iscsi.csi.k8s.io"
 )
 
-var version = "0.2.0"
+var version = "0.1.0"
 
-func NewDriver(nodeID, endpoint string) *driver {
-	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s", driverName, version, nodeID, endpoint)
+func NewDriver(nodeID, endpoint, apiURL string) *driver {
+	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s api: %s", driverName, version, nodeID, endpoint, apiURL)
 
 	d := &driver{
 		name:     driverName,
 		version:  version,
 		nodeID:   nodeID,
 		endpoint: endpoint,
+		apiURL:   apiURL,
 	}
 
 	if err := os.MkdirAll(fmt.Sprintf("/var/run/%s", driverName), 0o755); err != nil {

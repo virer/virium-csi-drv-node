@@ -33,7 +33,7 @@ if [ $ver != "master" ]; then
   repo="$repo/$ver"
 fi
 
-echo "Installing iscsi.csi.k8s.io CSI driver, version: $ver ..."
+echo "Installing virium-iscsi.csi.k8s.io CSI driver, version: $ver ..."
 kubectl apply -f $repo/csi-iscsi-driverinfo.yaml
 kubectl apply -f $repo/csi-iscsi-node.yaml
-echo 'iscsi.csi.k8s.io CSI driver installed successfully.'
+echo 'virium-iscsi.csi.k8s.io CSI driver installed successfully.'

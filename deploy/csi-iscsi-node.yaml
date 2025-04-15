@@ -46,7 +46,7 @@ spec:
           args:
             - --v=2
             - --csi-address=/csi/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/plugins/iscsi.csi.k8s.io/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/virium-iscsi.csi.k8s.io/csi.sock
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -109,7 +109,7 @@ spec:
               mountPath: /sbin/iscsiadm
               subPath: iscsiadm
             - name: iscsi-csi-run-dir
-              mountPath: /var/run/iscsi.csi.k8s.io
+              mountPath: /var/run/virium-iscsi.csi.k8s.io
           resources:
             limits:
               memory: 300Mi
@@ -119,7 +119,7 @@ spec:
       volumes:
         - name: socket-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/iscsi.csi.k8s.io
+            path: /var/lib/kubelet/plugins/virium-iscsi.csi.k8s.io
             type: DirectoryOrCreate
         - name: mountpoint-dir
           hostPath:
@@ -142,7 +142,7 @@ spec:
             name: configmap-csi-iscsiadm
         - name: iscsi-csi-run-dir
           hostPath:
-            path: /var/run/iscsi.csi.k8s.io
+            path: /var/run/virium-iscsi.csi.k8s.io
 ---
 kind: ConfigMap
 apiVersion: v1

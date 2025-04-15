@@ -32,18 +32,18 @@ container as shown below
 
 ```
 kubectl logs -f csi-iscsi-node-klh5c -c iscsi
-I1217 14:40:55.928307       7 driver.go:48] Driver: iscsi.csi.k8s.io version: 1.0.0
+I1217 14:40:55.928307       7 driver.go:48] Driver: virium-iscsi.csi.k8s.io version: 1.0.0
 I1217 14:40:55.928339       7 driver.go:89] Enabling volume access mode: SINGLE_NODE_WRITER
 I1217 14:40:55.928347       7 driver.go:100] Enabling controller service capability: UNKNOWN
 I1217 14:40:55.929521       7 server.go:107] Listening for connections on address: &net.UnixAddr{Name:"//csi/csi.sock", Net:"unix"}
 I1217 14:40:55.956864       7 utils.go:63] GRPC call: /csi.v1.Identity/GetPluginInfo
 I1217 14:40:55.956877       7 utils.go:64] GRPC request: {}
 I1217 14:40:55.957869       7 identityserver.go:32] Using default GetPluginInfo
-I1217 14:40:55.957874       7 utils.go:69] GRPC response: {"name":"iscsi.csi.k8s.io","vendor_version":"1.0.0"}
+I1217 14:40:55.957874       7 utils.go:69] GRPC response: {"name":"virium-iscsi.csi.k8s.io","vendor_version":"1.0.0"}
 I1217 14:40:56.767355       7 utils.go:63] GRPC call: /csi.v1.Identity/GetPluginInfo
 I1217 14:40:56.767375       7 utils.go:64] GRPC request: {}
 I1217 14:40:56.767437       7 identityserver.go:32] Using default GetPluginInfo
-I1217 14:40:56.767445       7 utils.go:69] GRPC response: {"name":"iscsi.csi.k8s.io","vendor_version":"1.0.0"}
+I1217 14:40:56.767445       7 utils.go:69] GRPC response: {"name":"virium-iscsi.csi.k8s.io","vendor_version":"1.0.0"}
 ```
 
 #### Update driver version quickly by editing driver deployment directly
@@ -77,5 +77,5 @@ One can list the CSI driver object as shown below.
 ```
 kubectl get csidriver
 NAME               ATTACHREQUIRED   PODINFOONMOUNT   STORAGECAPACITY   TOKENREQUESTS   REQUIRESREPUBLISH   MODES        AGE
-iscsi.csi.k8s.io   false            false            false             <unset>         false               Persistent   22m
+virium-iscsi.csi.k8s.io   false            false            false             <unset>         false               Persistent   22m
 ```

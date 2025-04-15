@@ -33,7 +33,7 @@ if [ $ver != "master" ]; then
   repo="$repo/$ver"
 fi
 
-echo "Uninstalling iscsi.csi.k8s.io CSI driver, version: $ver ..."
+echo "Uninstalling virium-iscsi.csi.k8s.io CSI driver, version: $ver ..."
 kubectl delete -f $repo/csi-iscsi-driverinfo.yaml
 kubectl delete -f $repo/csi-iscsi-node.yaml
-echo 'iscsi.csi.k8s.io CSI driver uninstalled successfully.'
+echo 'virium-iscsi.csi.k8s.io CSI driver uninstalled successfully.'

@@ -39,7 +39,7 @@ $ ./_output/iscsiplugin --endpoint tcp://127.0.0.1:10000 --nodeid CSINode -v=5 &
 
 ```console
 $ csc identity plugin-info --endpoint "$endpoint"
-"iscsi.csi.k8s.io"    "v2.0.0"
+"virium-iscsi.csi.k8s.io"    "v2.0.0"
 ```
 
 - Publish an iscsi volume
