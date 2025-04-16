@@ -25,13 +25,14 @@ import (
 )
 
 type driver struct {
-	name     string
-	nodeID   string
-	version  string
-	endpoint string
-	apiURL   string
-	cap      []*csi.VolumeCapability_AccessMode
-	cscap    []*csi.ControllerServiceCapability
+	name          string
+	nodeID        string
+	version       string
+	endpoint      string
+	apiURL        string
+	InitiatorName string
+	cap           []*csi.VolumeCapability_AccessMode
+	cscap         []*csi.ControllerServiceCapability
 }
 
 const (

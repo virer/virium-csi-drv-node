@@ -27,6 +27,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	klog "k8s.io/klog/v2"
 )
 
@@ -36,29 +37,62 @@ type ControllerServer struct {
 }
 
 type VolumeRequest struct {
-	Name     string `json:"name"`
-	Capacity int64  `json:"capacity"`
+	InitiatorName string `json:"initiator_name"`
+	Capacity      int64  `json:"capacity"`
 }
 
 type VolumeResponse struct {
-	ID string `json:"id"`
+	VolumeID string `json:"id"`
 }
 
 type DeleteVolumeRequest struct {
-	VolumeID string `json:"volume id"`
+	VolumeID string `json:"id"`
+}
+
+type VolumeResizeRequest struct {
+	VolumeID string `json:"id"`
+	Capacity int64  `json:"capacity"`
+}
+
+type SnapshotRequest struct {
+	VolumeID string `json:"id"`
+}
+
+type DeleteSnapshotRequest struct {
+	SnapshotID string `json:"id"`
+}
+
+// isValidVolumeCapabilities validates the given VolumeCapability array is valid
+func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) error {
+	if len(volCaps) == 0 {
+		return fmt.Errorf("volume capabilities missing in request")
+	}
+	/* for _, c := range volCaps {
+		if c.GetMount() != nil {
+			return fmt.Errorf("mount volume capability not supported")
+		}
+	} */
+	return nil
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	fmt.Println("Creating Volume via REST API:", req.Name)
+	fmt.Println("Creating Volume via REST API for:", req.Name)
 
 	//
 	// reqCapacity := req.GetCapacityRange().GetRequiredBytes()
 
+	// XXX FIXME XXX
+	/* if req.GetVolumeContentSource() != nil {
+		if err := cs.copyVolume(ctx, req, nfsVol); err != nil {
+			return nil, err
+		}
+	} */
+
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/volumes/create", cs.Driver.apiURL)
 	payload := VolumeRequest{
-		Name:     req.Name,
-		Capacity: req.CapacityRange.RequiredBytes,
+		InitiatorName: cs.Driver.InitiatorName,
+		Capacity:      req.CapacityRange.RequiredBytes,
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
@@ -98,10 +132,11 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	// Step 4: Return CSI-compatible volume response
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      volResp.ID,
+			VolumeId:      volResp.VolumeID,
 			CapacityBytes: req.CapacityRange.RequiredBytes,
 		},
 	}, nil
+
 }
 
 func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
@@ -162,7 +197,19 @@ func (cs *ControllerServer) ControllerUnpublishVolume(ctx context.Context, req *
 }
 
 func (cs *ControllerServer) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
+	}
+	if err := isValidVolumeCapabilities(req.GetVolumeCapabilities()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return &csi.ValidateVolumeCapabilitiesResponse{
+		Confirmed: &csi.ValidateVolumeCapabilitiesResponse_Confirmed{
+			VolumeCapabilities: req.GetVolumeCapabilities(),
+		},
+		Message: "",
+	}, nil
 }
 
 func (cs *ControllerServer) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
@@ -184,11 +231,106 @@ func (cs *ControllerServer) ControllerGetCapabilities(ctx context.Context, req *
 }
 
 func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	fmt.Println("Creating snapshot via REST API for:", req.Name)
+
+	// Step 1: Prepare request payload
+	apiURL := fmt.Sprintf("%s/api/snapshot/create", cs.Driver.apiURL)
+	payload := SnapshotRequest{
+		VolumeID: req.Name,
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	// Step 2: Make the HTTP POST request
+	// Create custom HTTP client with timeout
+	client := &http.Client{
+		Timeout: 50,
+	}
+
+	// Build the HTTP request manually
+	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call volume API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %s", string(body))
+	}
+
+	var volResp VolumeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&volResp); err != nil {
+		return nil, fmt.Errorf("failed to parse volume response: %v", err)
+	}
+
+	// Step 4: Return CSI-compatible volume response
+	return &csi.CreateSnapshotResponse{
+		Snapshot: &csi.Snapshot{
+			SnapshotId:     volResp.VolumeID,
+			SourceVolumeId: req.Name,
+			CreationTime:   timestamppb.Now(),
+			ReadyToUse:     true,
+		},
+	}, nil
 }
 
 func (cs *ControllerServer) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	snapshotID := req.GetSnapshotId()
+	if snapshotID == "" {
+		return nil, fmt.Errorf("snapshot ID is required")
+	}
+	fmt.Println("Deleting Volume via REST API:", snapshotID)
+
+	// Step 1: Prepare request payload
+	apiURL := fmt.Sprintf("%s/api/snapshot/delete", cs.Driver.apiURL)
+	payload := DeleteSnapshotRequest{
+		SnapshotID: snapshotID,
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	// Step 2: Make the HTTP POST request
+	// Create custom HTTP client with timeout
+	client := &http.Client{
+		Timeout: 50,
+	}
+
+	// Create HTTP DELETE request
+	httpReq, err := http.NewRequest("DELETE", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+
+	// Optionally add headers (e.g., for auth)
+	httpReq.Header.Set("Accept", "application/json")
+
+	// Send the request
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call volume DELETE API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Handle non-200 responses
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %s", string(body))
+	}
+
+	fmt.Println("Snapshot successfully deleted:", snapshotID)
+	return &csi.DeleteSnapshotResponse{}, nil
 }
 
 func (cs *ControllerServer) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
@@ -196,7 +338,59 @@ func (cs *ControllerServer) ListSnapshots(ctx context.Context, req *csi.ListSnap
 }
 
 func (cs *ControllerServer) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
+	}
+
+	if req.GetCapacityRange() == nil {
+		return nil, status.Error(codes.InvalidArgument, "Capacity Range missing in request")
+	}
+
+	volSizeBytes := int64(req.GetCapacityRange().GetRequiredBytes())
+	// Step 1: Prepare request payload
+	apiURL := fmt.Sprintf("%s/api/volumes/resize", cs.Driver.apiURL)
+	payload := VolumeResizeRequest{
+		VolumeID: req.GetVolumeId(),
+		Capacity: volSizeBytes,
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	// Step 2: Make the HTTP POST request
+	// Create custom HTTP client with timeout
+	client := &http.Client{
+		Timeout: 50,
+	}
+
+	// Build the HTTP request manually
+	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call volume API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %s", string(body))
+	}
+
+	var volResp VolumeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&volResp); err != nil {
+		return nil, fmt.Errorf("failed to parse volume response: %v", err)
+	}
+
+	// klog.V(2).Infof("ControllerExpandVolume(%s) successfully, currentQuota: %d bytes", req.VolumeId, volSizeBytes)
+
+	return &csi.ControllerExpandVolumeResponse{CapacityBytes: req.GetCapacityRange().GetRequiredBytes()}, nil
 }
 
 func (cs *ControllerServer) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {

@@ -2,23 +2,23 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: iscsiplugin-pv
+  name: virium-iscsiplugin-pv
   labels:
-    name: data-iscsiplugin
+    name: virium-iscsiplugin
 spec:
-  storageClassName: manual
+  storageClassName: virium
   accessModes:
     - ReadWriteOnce
   capacity:
     storage: 1Gi
   csi:
-    driver: iscsi.csi.k8s.io
-    volumeHandle: iscsi-data-id
+    driver: virium-iscsi.csi.k8s.io
+    volumeHandle: virium-data-id
     volumeAttributes:
-      targetPortal: "192.168.0.107:3260"
+      targetPortal: "192.168.0.147:3260"
       portals: "[]"
-      iqn: "iqn.2015-06.com.example.test:target1"
+      iqn: "iqn.2015-06.net.virer.virium.test:target1"
       lun: "0"
       iscsiInterface: "default"
-      discoveryCHAPAuth: "true"
+      discoveryCHAPAuth: "false"
       sessionCHAPAuth: "false"

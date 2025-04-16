@@ -15,4 +15,4 @@ spec:
   volumes:
     - name: iscsi-volume
       persistentVolumeClaim:
-        claimName: iscsiplugin-pvc
+        claimName: virium-iscsiplugin-pvc

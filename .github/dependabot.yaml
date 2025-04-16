@@ -23,7 +23,7 @@ updates:
   schedule:
     interval: "daily"
     time: "01:00"
-    timezone: "Asia/Shanghai"
+    timezone: "Europe/Brussels"
   labels:
     - "area/dependency"
     - "release-note-none"

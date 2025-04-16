@@ -65,7 +65,7 @@ kubectl edit daemmonset csi-iscsi-node
 change below config, e.g.
 
 ```console
-        image: gcr.io/k8s-staging-sig-storage/iscsiplugin:canary
+        image: docker.io/scaps/virium-csi-driver-iscsi:canary
         imagePullPolicy: IfNotPresent
 
 ```
