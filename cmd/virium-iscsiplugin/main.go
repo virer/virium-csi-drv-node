@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/virer/virium-csi-driver-iscsi/pkg/iscsi"
+	"github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsi"
 	klog "k8s.io/klog/v2"
 )
 
