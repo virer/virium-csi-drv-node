@@ -32,7 +32,7 @@ $ make build
 
 ```console
 $ cd $GOPATH/src/github.com/kubernetes-csi/csi-driver-iscsi
-$ ./_output/iscsiplugin --endpoint tcp://127.0.0.1:10000 --nodeid CSINode -v=5 &
+$ ./_output/virium-iscsiplugin --endpoint tcp://127.0.0.1:10000 --nodeid CSINode -v=5 &
 ```
 
 - Get plugin info

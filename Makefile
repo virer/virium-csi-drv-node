@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CMDS=iscsiplugin
+CMDS=virium-iscsiplugin
 all: build
 
 include release-tools/build.make
@@ -45,4 +45,4 @@ mod-check:
 .PHONY: clean
 clean:
 	go clean -mod=vendor -r -x
-	rm -f bin/iscsiplugin
+	rm -f bin/virium-iscsiplugin

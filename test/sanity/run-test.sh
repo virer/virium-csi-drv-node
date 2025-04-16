@@ -17,14 +17,14 @@
 set -eo pipefail
 
 function cleanup {
-  echo 'pkill -f iscsiplugin'
+  echo 'pkill -f virium-iscsiplugin'
   if [ -z "$GITHUB_ACTIONS" ]
   then
     # if not running on github actions, do not use sudo
-    pkill -f iscsiplugin
+    pkill -f virium-iscsiplugin
   else
     # if running on github actions, use sudo
-    sudo pkill -f iscsiplugin
+    sudo pkill -f virium-iscsiplugin
   fi
   echo 'Deleting CSI sanity test binary'
   rm -rf csi-test
@@ -62,10 +62,10 @@ fi
 if [ -z "$GITHUB_ACTIONS" ]
 then
   # if not running on github actions, do not use sudo
-  bin/iscsiplugin --endpoint "$endpoint" --nodeid "$nodeid" -v=5 &
+  bin/virium-iscsiplugin --endpoint "$endpoint" --nodeid "$nodeid" -v=5 &
 else
   # if running on github actions, use sudo
-  sudo bin/iscsiplugin --endpoint "$endpoint" --nodeid "$nodeid" -v=5 &
+  sudo bin/virium-iscsiplugin --endpoint "$endpoint" --nodeid "$nodeid" -v=5 &
 fi
 
 echo 'Begin to run sanity test...'
