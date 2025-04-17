@@ -66,9 +66,9 @@ func getISCSIInfo(req *csi.NodePublishVolumeRequest) (*iscsiDisk, error) {
 
 	iface := req.GetVolumeContext()["iscsiInterface"]
 	initiatorName := req.GetVolumeContext()["initiatorName"]
-	chapDiscovery := false
-	if req.GetVolumeContext()["discoveryCHAPAuth"] == "true" {
-		chapDiscovery = true
+	chapDiscovery := true
+	if req.GetVolumeContext()["discoveryCHAPAuth"] == "false" {
+		chapDiscovery = false
 	}
 
 	chapSession := false

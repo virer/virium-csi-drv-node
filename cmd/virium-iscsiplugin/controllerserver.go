@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -75,6 +76,36 @@ func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) error {
 	return nil
 }
 
+func viriumHttpClient(method string, url string, jsonData []byte) (*http.Response, error) {
+	// Step 2: Make the HTTP POST request
+	// Create custom HTTP client with timeout
+	timeout := time.Duration(50 * time.Second)
+	client := &http.Client{
+		Timeout: timeout,
+	}
+
+	// Build the HTTP request manually
+	httpReq, err := http.NewRequest(method, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %s", string(body))
+	}
+
+	return resp, err
+}
+
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	fmt.Println("Creating Volume via REST API for:", req.Name)
 
@@ -91,7 +122,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/volumes/create", cs.Driver.apiURL)
 	payload := VolumeRequest{
-		InitiatorName: cs.Driver.InitiatorName,
+		InitiatorName: cs.Driver.initiatorName,
 		Capacity:      req.CapacityRange.RequiredBytes,
 	}
 	jsonData, err := json.Marshal(payload)
@@ -99,29 +130,9 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	// Step 2: Make the HTTP POST request
-	// Create custom HTTP client with timeout
-	client := &http.Client{
-		Timeout: 50,
-	}
-
-	// Build the HTTP request manually
-	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	resp, err := viriumHttpClient("POST", apiURL, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Send the request
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call volume API: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error: %s", string(body))
+		return nil, fmt.Errorf("API request failed: %v", err)
 	}
 
 	var volResp VolumeResponse
@@ -156,27 +167,10 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	// Step 2: Make the HTTP POST request
-	// Create custom HTTP client with timeout
-	client := &http.Client{
-		Timeout: 50,
-	}
-
-	// Create HTTP DELETE request
-	httpReq, err := http.NewRequest("DELETE", apiURL, bytes.NewBuffer(jsonData))
+	resp, err := viriumHttpClient("DELETE", apiURL, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
+		return nil, fmt.Errorf("API request failed: %v", err)
 	}
-
-	// Optionally add headers (e.g., for auth)
-	httpReq.Header.Set("Accept", "application/json")
-
-	// Send the request
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call volume DELETE API: %v", err)
-	}
-	defer resp.Body.Close()
 
 	// Handle non-200 responses
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
@@ -245,8 +239,9 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 
 	// Step 2: Make the HTTP POST request
 	// Create custom HTTP client with timeout
+	timeout := time.Duration(50 * time.Second)
 	client := &http.Client{
-		Timeout: 50,
+		Timeout: timeout,
 	}
 
 	// Build the HTTP request manually

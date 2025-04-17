@@ -24,9 +24,10 @@ import (
 )
 
 var (
-	endpoint = flag.String("endpoint", "unix:///csi/csi.sock", "CSI endpoint")
-	nodeID   = flag.String("nodeid", "", "node id")
-	apiURL   = flag.String("apiurl", "http://virium-isci-fqdn.domain.tld:8787", "Virium api url")
+	endpoint      = flag.String("endpoint", "unix:///csi/csi.sock", "CSI endpoint")
+	nodeID        = flag.String("nodeid", "", "node id")
+	apiURL        = flag.String("apiurl", "http://virium-isci-fqdn.domain.tld:8787", "Virium api url")
+	initiatorName = flag.String("initiatorname", "iqn.2025-04.net.virer.virium.test:target1", "iSCSI initiator name identifier")
 )
 
 func init() {
@@ -40,6 +41,6 @@ func main() {
 }
 
 func handle() {
-	d := NewDriver(*nodeID, *endpoint, *apiURL)
+	d := NewDriver(*nodeID, *endpoint, *apiURL, *initiatorName)
 	d.Run()
 }

@@ -4,22 +4,50 @@
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-iscsi-node
+  name: virium
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      app: csi-iscsi-node
+      app: csi-virium
   template:
     metadata:
       labels:
-        app: csi-iscsi-node
+        app: csi-virium
     spec:
       hostNetwork: true  # original iscsi connection would be broken without hostNetwork setting
       dnsPolicy: ClusterFirstWithHostNet  # available values: Default, ClusterFirstWithHostNet, ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
+      serviceAccount: virium
       containers:
+        - name: csi-provisioner
+          image: registry.k8s.io/sig-storage/csi-provisioner:v5.2.0
+          args:
+            - "-v=2"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
+            - "--leader-election-namespace=kube-system"
+            - "--extra-create-metadata=true"
+            - "--feature-gates=HonorPVReclaimPolicy=true"
+            - "--timeout=1200s"
+            - "--retry-interval-max=30m"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+          resources:
+            limits:
+              memory: 400Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL      
         - name: liveness-probe
           image: registry.k8s.io/sig-storage/livenessprobe:v2.10.0
           args:
@@ -63,18 +91,30 @@ spec:
             requests:
               cpu: 10m
               memory: 20Mi
-        - name: iscsi
+        - name: virium
           securityContext:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: docker.io/scaps/virium-csi-driver-iscsi:canary
+          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.5
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
+            - "--apiurl=$(API_URL)"
+            - "--initiatorname=$(INITIATOR)"
             - "--v=5"
           env:
+            - name: API_URL
+              valueFrom:
+                secretKeyRef:
+                  name: virium-creds
+                  key: apiurl
+            - name: INITIATOR
+              valueFrom:
+                secretKeyRef:
+                  name: virium-creds
+                  key: initiator                  
             - name: NODE_ID
               valueFrom:
                 fieldRef:
@@ -164,3 +204,12 @@ data:
       chroot /host iscsiadm "$@"
     fi
 ---
+kind: Secret
+apiVersion: v1
+metadata:
+  creationTimestamp: null
+  name: virium-creds
+  namespace: kube-system
+data:
+  apiurl: aHR0cDovL3Zpcml1bS1hcGktZnFkbi5kb21haW4udGxkOjg3ODcK
+  initiator: aXFuLjIwMjUtMDQubmV0LnZpcmVyLnZpcml1bS50ZXN0OnRhcmdldDEK
