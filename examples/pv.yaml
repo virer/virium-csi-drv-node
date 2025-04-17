@@ -20,5 +20,5 @@ spec:
       iqn: "iqn.2015-06.net.virer.virium.test:target1"
       lun: "0"
       iscsiInterface: "default"
-      discoveryCHAPAuth: "false"
+      discoveryCHAPAuth: "true"
       sessionCHAPAuth: "false"
