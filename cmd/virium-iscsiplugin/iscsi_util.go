@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 
-	iscsiLib "github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsilib"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	klog "k8s.io/klog/v2"
@@ -60,7 +59,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 
 	// Persist iscsi disk config to json file for DetachDisk path
 	iscsiInfoPath := getIscsiInfoPath(b.VolName)
-	err = iscsiLib.PersistConnector(b.connector, iscsiInfoPath)
+	err = PersistConnector(b.connector, iscsiInfoPath)
 	if err != nil {
 		klog.Errorf("failed to persist connection info: %v, disconnecting volume and failing the publish request because persistence files are required for reliable Unpublish", err)
 		return "", fmt.Errorf("unable to create persistence file for connection")
@@ -97,7 +96,7 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 	}
 	iscsiInfoPath := getIscsiInfoPath(c.VolName)
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
-	connector, err := iscsiLib.GetConnectorFromFile(iscsiInfoPath)
+	connector, err := GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.Warningf("assuming that ISCSI connection is already closed")
@@ -122,7 +121,7 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 		return err
 	}
 
-	iscsiLib.Disconnect(connector.TargetIqn, connector.TargetPortals)
+	Disconnect(connector.TargetIqn, connector.TargetPortals)
 	if err := os.RemoveAll(targetPath); err != nil {
 		klog.Errorf("iscsi: failed to remove mount path Error: %v", err)
 	}

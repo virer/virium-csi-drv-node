@@ -11,4 +11,4 @@ all:
 	podman build -t docker.io/scaps/virium-csi-driver-iscsi:canary .
 
 push:
-	podman push docker.io/scaps/virium-csi-driver-iscsi:canary
+	podman push --authfile=${HOME}/.docker/dockerconfig docker.io/scaps/virium-csi-driver-iscsi:canary

@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	iscsiLib "github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsilib"
 	"k8s.io/kubernetes/pkg/volume/util"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
@@ -102,11 +101,11 @@ func getISCSIInfo(req *csi.NodePublishVolumeRequest) (*iscsiDisk, error) {
 	return iscsiDisk, nil
 }
 
-func buildISCSIConnector(iscsiInfo *iscsiDisk) *iscsiLib.Connector {
+func buildISCSIConnector(iscsiInfo *iscsiDisk) *Connector {
 	if iscsiInfo == nil || iscsiInfo.VolName == "" || iscsiInfo.Iqn == "" {
 		return nil
 	}
-	c := iscsiLib.Connector{
+	c := Connector{
 		VolumeName:       iscsiInfo.VolName,
 		TargetIqn:        iscsiInfo.Iqn,
 		TargetPortals:    iscsiInfo.Portals,
@@ -117,9 +116,9 @@ func buildISCSIConnector(iscsiInfo *iscsiDisk) *iscsiLib.Connector {
 		Interface:        iscsiInfo.Iface,
 	}
 
-	if iscsiInfo.sessionSecret != (iscsiLib.Secrets{}) {
+	if iscsiInfo.sessionSecret != (Secrets{}) {
 		c.SessionSecrets = iscsiInfo.sessionSecret
-		if iscsiInfo.discoverySecret != (iscsiLib.Secrets{}) {
+		if iscsiInfo.discoverySecret != (Secrets{}) {
 			c.DiscoverySecrets = iscsiInfo.discoverySecret
 		}
 	}
@@ -174,50 +173,50 @@ func parseSecret(secretParams string) map[string]string {
 	return secret
 }
 
-func parseSessionSecret(secretParams map[string]string) (iscsiLib.Secrets, error) {
+func parseSessionSecret(secretParams map[string]string) (Secrets, error) {
 	var ok bool
-	secret := iscsiLib.Secrets{}
+	secret := Secrets{}
 
 	if len(secretParams) == 0 {
 		return secret, nil
 	}
 
 	if secret.UserName, ok = secretParams["node.session.auth.username"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.session.auth.username not found in secret")
+		return Secrets{}, fmt.Errorf("node.session.auth.username not found in secret")
 	}
 	if secret.Password, ok = secretParams["node.session.auth.password"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.session.auth.password not found in secret")
+		return Secrets{}, fmt.Errorf("node.session.auth.password not found in secret")
 	}
 	if secret.UserNameIn, ok = secretParams["node.session.auth.username_in"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.session.auth.username_in not found in secret")
+		return Secrets{}, fmt.Errorf("node.session.auth.username_in not found in secret")
 	}
 	if secret.PasswordIn, ok = secretParams["node.session.auth.password_in"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.session.auth.password_in not found in secret")
+		return Secrets{}, fmt.Errorf("node.session.auth.password_in not found in secret")
 	}
 
 	secret.SecretsType = "chap"
 	return secret, nil
 }
 
-func parseDiscoverySecret(secretParams map[string]string) (iscsiLib.Secrets, error) {
+func parseDiscoverySecret(secretParams map[string]string) (Secrets, error) {
 	var ok bool
-	secret := iscsiLib.Secrets{}
+	secret := Secrets{}
 
 	if len(secretParams) == 0 {
 		return secret, nil
 	}
 
 	if secret.UserName, ok = secretParams["node.sendtargets.auth.username"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.sendtargets.auth.username not found in secret")
+		return Secrets{}, fmt.Errorf("node.sendtargets.auth.username not found in secret")
 	}
 	if secret.Password, ok = secretParams["node.sendtargets.auth.password"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.sendtargets.auth.password not found in secret")
+		return Secrets{}, fmt.Errorf("node.sendtargets.auth.password not found in secret")
 	}
 	if secret.UserNameIn, ok = secretParams["node.sendtargets.auth.username_in"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.sendtargets.auth.username_in not found in secret")
+		return Secrets{}, fmt.Errorf("node.sendtargets.auth.username_in not found in secret")
 	}
 	if secret.PasswordIn, ok = secretParams["node.sendtargets.auth.password_in"]; !ok {
-		return iscsiLib.Secrets{}, fmt.Errorf("node.sendtargets.auth.password_in not found in secret")
+		return Secrets{}, fmt.Errorf("node.sendtargets.auth.password_in not found in secret")
 	}
 
 	secret.SecretsType = "chap"
@@ -233,8 +232,8 @@ type iscsiDisk struct {
 	chapDiscovery   bool
 	chapSession     bool
 	secret          map[string]string
-	sessionSecret   iscsiLib.Secrets
-	discoverySecret iscsiLib.Secrets
+	sessionSecret   Secrets
+	discoverySecret Secrets
 	InitiatorName   string
 	VolName         string
 }
@@ -248,7 +247,7 @@ type iscsiDiskMounter struct {
 	exec         exec.Interface
 	deviceUtil   util.DeviceUtil
 	targetPath   string
-	connector    *iscsiLib.Connector
+	connector    *Connector
 }
 
 type iscsiDiskUnmounter struct {
