@@ -40,7 +40,10 @@ type VolumeRequest struct {
 }
 
 type VolumeResponse struct {
-	VolumeID string `json:"id"`
+	VolumeID     string `json:"id"`
+	TargetPortal string `json:"targetPortal"`
+	Iqn          string `json:"iqn"`
+	Lun          string `json:"lun"`
 }
 
 type DeleteVolumeRequest struct {
@@ -94,11 +97,22 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, fmt.Errorf("failed to parse volume response: %v", err)
 	}
 
+	emptyList, _ := json.Marshal([]string{}) // gives: []byte(`[]`)
+
 	// Step 4: Return CSI-compatible volume response
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volResp.VolumeID,
 			CapacityBytes: req.CapacityRange.RequiredBytes,
+			VolumeContext: map[string]string{
+				"targetPortal":      volResp.TargetPortal,
+				"iqn":               volResp.Iqn,
+				"lun":               volResp.Lun,
+				"portal":            string(emptyList), // portal: "[]"
+				"iscsiInterface":    "default",
+				"discoveryCHAPAuth": "true",
+				"sessionCHAPAuth":   "false",
+			},
 		},
 	}, nil
 
