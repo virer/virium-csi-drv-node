@@ -1,4 +1,4 @@
-TAG=v0.1.10
+TAG=v0.1.11
 
 clean:
 	rm -f bin/virium-iscsiplugin

@@ -110,24 +110,22 @@ func viriumHttpClient(method string, url string, jsonData []byte) ([]byte, error
 	}
 	defer resp.Body.Close()
 
-	if method == "POST" {
-		// We expect HTTP 201 response
-		if resp.StatusCode != http.StatusCreated {
-			body, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("API error: %s", string(body))
-		}
-	} else if method == "DELETE" {
-		// We expect HTTP 200 response
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-			body, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("API error: %s", string(body))
-		}
-	}
-
 	// Read all data into memory
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if method == "POST" {
+		// We expect HTTP 201 response
+		if resp.StatusCode != http.StatusCreated {
+			return nil, fmt.Errorf("API error(%d): %s", resp.StatusCode, string(body))
+		}
+	} else if method == "DELETE" {
+		// We expect HTTP 200 response
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+			return nil, fmt.Errorf("API error(%d): %s", resp.StatusCode, string(body))
+		}
 	}
 
 	return body, nil
