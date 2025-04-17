@@ -212,4 +212,4 @@ metadata:
   namespace: kube-system
 data:
   apiurl: aHR0cDovL3Zpcml1bS1hcGktZnFkbi5kb21haW4udGxkOjg3ODcK
-  initiator: aXFuLjIwMjUtMDQubmV0LnZpcmVyLnZpcml1bS50ZXN0OnRhcmdldDEK
+  initiator: aXFuLjIwMjUtMDQubmV0LnZpcmVyLnZpcml1bS50ZXN0OnRhcmdldDE=
