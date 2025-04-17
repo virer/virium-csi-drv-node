@@ -20,7 +20,6 @@ import (
 	"flag"
 	"os"
 
-	"github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsi"
 	klog "k8s.io/klog/v2"
 )
 
@@ -41,6 +40,6 @@ func main() {
 }
 
 func handle() {
-	d := iscsi.NewDriver(*nodeID, *endpoint, *apiURL)
+	d := NewDriver(*nodeID, *endpoint, *apiURL)
 	d.Run()
 }
