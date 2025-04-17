@@ -88,7 +88,7 @@ func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) error {
 	return nil
 }
 
-func viriumHttpClient(method string, url string, jsonData []byte) (*http.Response, error) {
+func viriumHttpClient(method string, url string, jsonData []byte) ([]byte, error) {
 	// Step 2: Make the HTTP POST request
 	// Create custom HTTP client with timeout
 	timeout := time.Duration(50 * time.Second)
@@ -110,10 +110,25 @@ func viriumHttpClient(method string, url string, jsonData []byte) (*http.Respons
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error: %s", string(body))
+	if method == "POST" {
+		// We expect HTTP 201 response
+		if resp.StatusCode != http.StatusCreated {
+			body, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("API error: %s", string(body))
+		}
+	} else if method == "DELETE" {
+		// We expect HTTP 200 response
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+			body, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("API error: %s", string(body))
+		}
 	}
 
-	return resp, nil
+	// Read all data into memory
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
