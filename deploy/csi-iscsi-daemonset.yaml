@@ -97,7 +97,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.11
+          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.12.2
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
