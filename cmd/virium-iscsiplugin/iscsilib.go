@@ -248,6 +248,9 @@ func Connect(c Connector) (string, error) {
 
 // Connect attempts to connect a volume to this node using the provided Connector info
 func (c *Connector) Connect() (string, error) {
+	log.Print("****Connector targetPortals:", c.TargetPortals)
+	log.Print("****Connector Devices:", c.Devices)
+	log.Print("****Connector VolName:", c.VolumeName)
 	if c.RetryCount == 0 {
 		c.RetryCount = 10
 	}
@@ -281,6 +284,7 @@ func (c *Connector) Connect() (string, error) {
 		}
 	}
 
+	log.Printf("**GetISCSIDevices...")
 	// GetISCSIDevices returns all devices if no paths are given
 	if len(devicePaths) < 1 {
 		c.Devices = []Device{}
@@ -293,6 +297,7 @@ func (c *Connector) Connect() (string, error) {
 		return "", fmt.Errorf("failed to find device path: %s, last error seen: %v", devicePaths, lastErr)
 	}
 
+	log.Printf("**mountTargetDevice...")
 	mountTargetDevice, err := c.getMountTargetDevice()
 	c.MountTargetDevice = mountTargetDevice
 	if err != nil {
@@ -305,13 +310,13 @@ func (c *Connector) Connect() (string, error) {
 		c.Devices = []Device{}
 		return "", err
 	}
-
+	log.Printf("**multipath...")
 	if c.IsMultipathEnabled() {
 		if err := c.IsMultipathConsistent(); err != nil {
 			return "", fmt.Errorf("multipath is inconsistent: %v", err)
 		}
 	}
-
+	log.Printf("**end!...")
 	return c.MountTargetDevice.GetPath(), nil
 }
 

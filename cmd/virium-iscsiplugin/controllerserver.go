@@ -103,8 +103,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, fmt.Errorf("failed to parse volume response: %v", err)
 	}
 
-	// emptyList, _ := json.Marshal([]string{}) // gives: []byte(`[]`)
-	// 	"portal":            string(emptyList), // portal: "[]"
+	emptyList, _ := json.Marshal([]string{}) // gives: []byte(`[]`)
 
 	// Step 4: Return CSI-compatible volume response
 	return &csi.CreateVolumeResponse{
@@ -114,8 +113,11 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			VolumeContext: map[string]string{
 				"targetPortal":      volResp.TargetPortal,
 				"iqn":               volResp.Iqn,
+				"target_portal":     volResp.TargetPortal,
+				"target_iqn":        volResp.Iqn,
 				"lun":               volResp.Lun,
-				"iscsiInterface":    "default",
+				"portal":            string(emptyList), // portal: "[]"
+				"interface":         "default",
 				"discoveryCHAPAuth": volResp.DiscoveryCHAPAuth,
 				"sessionCHAPAuth":   volResp.SessionCHAPAuth,
 			},

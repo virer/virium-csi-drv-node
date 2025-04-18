@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"google.golang.org/grpc/codes"
@@ -30,33 +31,39 @@ import (
 type ISCSIUtil struct{}
 
 func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
+	log.Printf("AttachDisk1")
 	if b.connector == nil {
 		return "", fmt.Errorf("connector is nil")
 	}
 
+	log.Printf("AttachDisk2")
 	devicePath, err := (*b.connector).Connect()
 	if err != nil {
+		log.Print("Error", err)
 		return "", err
 	}
+	log.Printf("AttachDisk3")
 	if devicePath == "" {
 		return "", fmt.Errorf("connect reported success, but no path returned")
 	}
+	log.Printf("AttachDisk4")
 	// Mount device
 	mntPath := b.targetPath
 	notMnt, err := b.mounter.IsLikelyNotMountPoint(mntPath)
 	if err != nil && !os.IsNotExist(err) {
 		return "", fmt.Errorf("heuristic determination of mount point failed:%v", err)
 	}
+	log.Printf("AttachDisk5")
 	if !notMnt {
 		klog.Infof("iscsi: %s already mounted", mntPath)
 		return "", nil
 	}
-
+	log.Printf("AttachDisk6")
 	if err := os.MkdirAll(mntPath, 0o750); err != nil {
 		klog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
 		return "", err
 	}
-
+	log.Printf("AttachDisk7")
 	// Persist iscsi disk config to json file for DetachDisk path
 	iscsiInfoPath := getIscsiInfoPath(b.VolName)
 	err = PersistConnector(b.connector, iscsiInfoPath)
@@ -73,12 +80,12 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		options = append(options, "rw")
 	}
 	options = append(options, b.mountOptions...)
-
+	log.Printf("AttachDisk8")
 	err = b.mounter.FormatAndMount(devicePath, mntPath, b.fsType, options)
 	if err != nil {
 		klog.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, b.fsType, mntPath, err)
 	}
-
+	log.Printf("AttachDisk9")
 	return devicePath, err
 }
 

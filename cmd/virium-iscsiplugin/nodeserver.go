@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"log"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -38,18 +40,20 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if len(req.GetTargetPath()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "targetPath not provided")
 	}
-
+	log.Printf("NodePublishVolume1 %s", req.TargetPath)
 	iscsiInfo, err := getISCSIInfo(req)
+	log.Printf("NodePublishVolume2 %s", iscsiInfo.Iqn)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	diskMounter := getISCSIDiskMounter(iscsiInfo, req)
+	log.Printf("NodePublishVolume3 %s", diskMounter.fsType)
 
 	util := &ISCSIUtil{}
 	if _, err := util.AttachDisk(*diskMounter); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
+	log.Printf("NodePublishVolume4")
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -88,15 +92,7 @@ func (ns *nodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReque
 
 func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
 	return &csi.NodeGetCapabilitiesResponse{
-		Capabilities: []*csi.NodeServiceCapability{
-			{
-				Type: &csi.NodeServiceCapability_Rpc{
-					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
-					},
-				},
-			},
-		},
+		Capabilities: ns.Driver.nscap,
 	}, nil
 }
 

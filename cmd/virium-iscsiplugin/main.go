@@ -30,11 +30,9 @@ var (
 	initiatorName = flag.String("initiatorname", "iqn.2025-04.net.virer.virium.test:target1", "iSCSI initiator name identifier")
 )
 
-func init() {
-	klog.InitFlags(nil)
-}
-
 func main() {
+	klog.InitFlags(nil)
+	_ = flag.Set("logtostderr", "true")
 	flag.Parse()
 	handle()
 	os.Exit(0)
