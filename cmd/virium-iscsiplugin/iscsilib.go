@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -268,7 +269,9 @@ func (c *Connector) Connect() (string, error) {
 
 	var lastErr error
 	var devicePaths []string
+	log.Printf("Searching for devicePath in targetPortals...")
 	for _, target := range c.TargetPortals {
+		log.Printf("Searching for devicePath in target %s", target)
 		devicePath, err := c.connectTarget(c.TargetIqn, target, iFace, iscsiTransport)
 		if err != nil {
 			lastErr = err

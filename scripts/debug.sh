@@ -6,3 +6,6 @@ iscsiadm  -m node  -T iqn.2025-04.net.virer.virium:0a062498-f339-45be-82b5-0cca5
 
 # Logout
 iscsiadm  -m node  -p 100.100.0.147:3260 -u
+
+# Logs
+oc logs -n kube-system $( oc get pods -n kube-system -l app=csi-virium -o NAME) -f -c virium

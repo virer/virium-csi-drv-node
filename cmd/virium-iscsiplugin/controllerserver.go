@@ -40,27 +40,33 @@ type VolumeRequest struct {
 }
 
 type VolumeResponse struct {
-	VolumeID     string `json:"id"`
-	TargetPortal string `json:"targetPortal"`
-	Iqn          string `json:"iqn"`
-	Lun          string `json:"lun"`
+	VolumeID          string `json:"volume_id"`
+	TargetPortal      string `json:"targetPortal"`
+	Iqn               string `json:"iqn"`
+	Lun               string `json:"lun"`
+	DiscoveryCHAPAuth string `json:"discoveryCHAPAuth"`
+	SessionCHAPAuth   string `json:"sessionCHAPAuth"`
 }
 
 type DeleteVolumeRequest struct {
-	VolumeID string `json:"id"`
+	VolumeID string `json:"volume_id"`
 }
 
 type VolumeResizeRequest struct {
-	VolumeID string `json:"id"`
+	VolumeID string `json:"volume_id"`
 	Capacity int64  `json:"capacity"`
 }
 
 type SnapshotRequest struct {
-	VolumeID string `json:"id"`
+	VolumeID string `json:"volume_id"`
+}
+
+type SnapshotResponse struct {
+	VolumeID string `json:"snapshot_id"`
 }
 
 type DeleteSnapshotRequest struct {
-	SnapshotID string `json:"id"`
+	SnapshotID string `json:"snapshot_id"`
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
@@ -110,8 +116,8 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 				"iqn":               volResp.Iqn,
 				"lun":               volResp.Lun,
 				"iscsiInterface":    "default",
-				"discoveryCHAPAuth": "true",
-				"sessionCHAPAuth":   "false",
+				"discoveryCHAPAuth": volResp.DiscoveryCHAPAuth,
+				"sessionCHAPAuth":   volResp.SessionCHAPAuth,
 			},
 		},
 	}, nil
@@ -204,7 +210,7 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		return nil, fmt.Errorf("API request failed: %v", err)
 	}
 
-	var volResp VolumeResponse
+	var volResp SnapshotResponse
 	if err := json.NewDecoder(bytes.NewReader(resp)).Decode(&volResp); err != nil {
 		return nil, fmt.Errorf("failed to parse volume response: %v", err)
 	}

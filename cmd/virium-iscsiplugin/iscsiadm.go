@@ -83,7 +83,7 @@ func CreateDBEntry(tgtIQN, portal, iFace string, discoverySecrets, sessionSecret
 
 	if discoverySecrets.SecretsType == "chap" {
 		klog.V(2).Infof("Setting CHAP Discovery...")
-		err := createCHAPEntries(baseArgs, discoverySecrets, true)
+		err := createCHAPEntries(baseArgs, discoverySecrets, false)
 		if err != nil {
 			return err
 		}

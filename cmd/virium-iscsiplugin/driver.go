@@ -39,7 +39,7 @@ const (
 	driverName = "virium-iscsi.csi.k8s.io"
 )
 
-var version = "v0.1.12.2"
+var version = "v0.1.12.5"
 
 func NewDriver(nodeID, endpoint, apiURL, initiatorName string) *driver {
 	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s api: %s initiator: %s", driverName, version, nodeID, endpoint, apiURL, initiatorName)
