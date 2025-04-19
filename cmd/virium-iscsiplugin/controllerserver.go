@@ -70,17 +70,7 @@ type DeleteSnapshotRequest struct {
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	fmt.Println("Creating Volume via REST API for:", req.Name)
-
-	//
-	// reqCapacity := req.GetCapacityRange().GetRequiredBytes()
-
-	// XXX FIXME XXX
-	/* if req.GetVolumeContentSource() != nil {
-		if err := cs.copyVolume(ctx, req, nfsVol); err != nil {
-			return nil, err
-		}
-	} */
+	klog.V(1).Info("Creating Volume via API for:", req.Name)
 
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/volumes/create", cs.Driver.apiURL)
@@ -103,7 +93,11 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, fmt.Errorf("failed to parse volume response: %v", err)
 	}
 
-	emptyList, _ := json.Marshal([]string{}) // gives: []byte(`[]`)
+	portals := []string{}
+	portals = append(portals, volResp.TargetPortal)
+	portalList, _ := json.Marshal(portals)
+
+	klog.V(1).Info("Volume created successfully", req.Name)
 
 	// Step 4: Return CSI-compatible volume response
 	return &csi.CreateVolumeResponse{
@@ -111,12 +105,10 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			VolumeId:      volResp.VolumeID,
 			CapacityBytes: req.CapacityRange.RequiredBytes,
 			VolumeContext: map[string]string{
+				"portals":           string(portalList), // portal: "[]"
 				"targetPortal":      volResp.TargetPortal,
 				"iqn":               volResp.Iqn,
-				"target_portal":     volResp.TargetPortal,
-				"target_iqn":        volResp.Iqn,
 				"lun":               volResp.Lun,
-				"portal":            string(emptyList), // portal: "[]"
 				"interface":         "default",
 				"discoveryCHAPAuth": volResp.DiscoveryCHAPAuth,
 				"sessionCHAPAuth":   volResp.SessionCHAPAuth,
@@ -131,7 +123,7 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	if volumeID == "" {
 		return nil, fmt.Errorf("volume ID is required")
 	}
-	fmt.Println("Deleting Volume via REST API:", volumeID)
+	klog.V(1).Info("Deleting Volume via API:", volumeID)
 
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/volumes/delete", cs.Driver.apiURL)
@@ -148,7 +140,7 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		return nil, fmt.Errorf("API request failed: %v", err)
 	}
 
-	fmt.Println("Volume successfully deleted:", volumeID)
+	klog.V(1).Info("Volume successfully deleted", volumeID)
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
@@ -195,7 +187,7 @@ func (cs *ControllerServer) ControllerGetCapabilities(ctx context.Context, req *
 }
 
 func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
-	fmt.Println("Creating snapshot via REST API for:", req.Name)
+	klog.V(1).Info("Creating snapshot via API for:", req.Name)
 
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/snapshot/create", cs.Driver.apiURL)
@@ -216,7 +208,7 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	if err := json.NewDecoder(bytes.NewReader(resp)).Decode(&volResp); err != nil {
 		return nil, fmt.Errorf("failed to parse volume response: %v", err)
 	}
-
+	klog.V(1).Info("Snapshot created successfully, snapshotId:", volResp.VolumeID)
 	// Step 4: Return CSI-compatible volume response
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
@@ -233,7 +225,7 @@ func (cs *ControllerServer) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 	if snapshotID == "" {
 		return nil, fmt.Errorf("snapshot ID is required")
 	}
-	fmt.Println("Deleting Volume via REST API:", snapshotID)
+	klog.V(1).Info("Deleting Volume via API:", snapshotID)
 
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/snapshot/delete", cs.Driver.apiURL)
@@ -250,7 +242,7 @@ func (cs *ControllerServer) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 		return nil, fmt.Errorf("API request failed: %v", err)
 	}
 
-	fmt.Println("Snapshot successfully deleted:", snapshotID)
+	klog.V(1).Info("Snapshot successfully deleted:", snapshotID)
 	return &csi.DeleteSnapshotResponse{}, nil
 }
 
@@ -266,7 +258,7 @@ func (cs *ControllerServer) ControllerExpandVolume(ctx context.Context, req *csi
 	if req.GetCapacityRange() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Capacity Range missing in request")
 	}
-
+	klog.V(1).Info("Expand Volume", req.GetVolumeId())
 	volSizeBytes := int64(req.GetCapacityRange().GetRequiredBytes())
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/volumes/resize", cs.Driver.apiURL)
@@ -289,7 +281,7 @@ func (cs *ControllerServer) ControllerExpandVolume(ctx context.Context, req *csi
 		return nil, fmt.Errorf("failed to parse volume response: %v", err)
 	}
 
-	// klog.V(2).Infof("ControllerExpandVolume(%s) successfully, currentQuota: %d bytes", req.VolumeId, volSizeBytes)
+	klog.V(1).Infof("Expand Volume %s successfully, currentQuota: %d bytes", req.VolumeId, volSizeBytes)
 
 	return &csi.ControllerExpandVolumeResponse{CapacityBytes: req.GetCapacityRange().GetRequiredBytes()}, nil
 }

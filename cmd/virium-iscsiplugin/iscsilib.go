@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -92,6 +91,9 @@ type Connector struct {
 }
 
 // parseSession takes the raw stdout from the `iscsiadm -m session` command and encodes it into an iSCSI session type
+// Output example:
+// tcp: [4] 192.168.0.12:3260,1 iqn.2025-04.net.virer.virium:aafef1d8-0a7a-4009-837d-ae23e61509e0 (non-flash)
+
 func parseSessions(lines string) []iscsiSession {
 	entries := strings.Split(strings.TrimSpace(lines), "\n")
 	r := strings.NewReplacer("[", "",
@@ -248,9 +250,7 @@ func Connect(c Connector) (string, error) {
 
 // Connect attempts to connect a volume to this node using the provided Connector info
 func (c *Connector) Connect() (string, error) {
-	log.Print("****Connector targetPortals:", c.TargetPortals)
-	log.Print("****Connector Devices:", c.Devices)
-	log.Print("****Connector VolName:", c.VolumeName)
+	klog.V(2).Infof("Connect")
 	if c.RetryCount == 0 {
 		c.RetryCount = 10
 	}
@@ -272,9 +272,9 @@ func (c *Connector) Connect() (string, error) {
 
 	var lastErr error
 	var devicePaths []string
-	log.Printf("Searching for devicePath in targetPortals...")
+	klog.V(2).Infof("Searching for devicePath in targetPortals...")
 	for _, target := range c.TargetPortals {
-		log.Printf("Searching for devicePath in target %s", target)
+		klog.V(2).Infof("Searching for devicePath in target %s", target)
 		devicePath, err := c.connectTarget(c.TargetIqn, target, iFace, iscsiTransport)
 		if err != nil {
 			lastErr = err
@@ -284,7 +284,7 @@ func (c *Connector) Connect() (string, error) {
 		}
 	}
 
-	log.Printf("**GetISCSIDevices...")
+	klog.V(2).Infof("Geting ISCSI Devices...")
 	// GetISCSIDevices returns all devices if no paths are given
 	if len(devicePaths) < 1 {
 		c.Devices = []Device{}
@@ -297,11 +297,11 @@ func (c *Connector) Connect() (string, error) {
 		return "", fmt.Errorf("failed to find device path: %s, last error seen: %v", devicePaths, lastErr)
 	}
 
-	log.Printf("**mountTargetDevice...")
+	klog.V(2).Infof("mounting TargetDevice...")
 	mountTargetDevice, err := c.getMountTargetDevice()
 	c.MountTargetDevice = mountTargetDevice
 	if err != nil {
-		klog.V(2).Infof("Connect failed: %v", err)
+		klog.V(2).ErrorS(err, "Connect failed")
 		err := RemoveSCSIDevices(c.Devices...)
 		if err != nil {
 			return "", err
@@ -310,13 +310,15 @@ func (c *Connector) Connect() (string, error) {
 		c.Devices = []Device{}
 		return "", err
 	}
-	log.Printf("**multipath...")
+
+	klog.V(2).Infof("Multipath...")
 	if c.IsMultipathEnabled() {
 		if err := c.IsMultipathConsistent(); err != nil {
+			klog.V(2).ErrorS(err, "multipath is inconsistent")
 			return "", fmt.Errorf("multipath is inconsistent: %v", err)
 		}
 	}
-	log.Printf("**end!...")
+
 	return c.MountTargetDevice.GetPath(), nil
 }
 

@@ -97,13 +97,15 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.13.6
+          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.14.7
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--apiurl=$(API_URL)"
             - "--initiatorname=$(INITIATOR)"
-            - "--v=5"
+            - "--api_username=$(API_USERNAME)"
+            - "--api_password=$(API_PASSWORD)"
+            - "--v=2"
           env:
             - name: API_URL
               valueFrom:
@@ -114,7 +116,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: virium-creds
-                  key: initiator                  
+                  key: initiator
+            - name: API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: virium-creds
+                  key: api_username
+            - name: API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: virium-creds
+                  key: api_password              
             - name: NODE_ID
               valueFrom:
                 fieldRef:
@@ -213,3 +225,5 @@ metadata:
 data:
   apiurl: aHR0cDovL3Zpcml1bS1hcGktZnFkbi5kb21haW4udGxkOjg3ODcK
   initiator: aXFuLjIwMjUtMDQubmV0LnZpcmVyLnZpcml1bS50ZXN0OnRhcmdldDE=
+  api_username: dmlyaXVtX2FwaV91c2VybmFtZQ==
+  api_password: dmlyaXVtX2FwaV9wYXNzd29yZA==

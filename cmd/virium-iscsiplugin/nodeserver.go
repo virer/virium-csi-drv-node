@@ -17,12 +17,11 @@ limitations under the License.
 package main
 
 import (
-	"log"
-
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	klog "k8s.io/klog/v2"
 )
 
 type nodeServer struct {
@@ -40,20 +39,20 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if len(req.GetTargetPath()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "targetPath not provided")
 	}
-	log.Printf("NodePublishVolume1 %s", req.TargetPath)
+	klog.V(2).Infof("NodePublishVolume1 %+v\n", req)
 	iscsiInfo, err := getISCSIInfo(req)
-	log.Printf("NodePublishVolume2 %s", iscsiInfo.Iqn)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	klog.V(2).Infof("%+v\n", iscsiInfo)
 	diskMounter := getISCSIDiskMounter(iscsiInfo, req)
-	log.Printf("NodePublishVolume3 %s", diskMounter.fsType)
+	klog.V(2).Infof("NodePublishVolume3 %+v\n", diskMounter)
 
 	util := &ISCSIUtil{}
 	if _, err := util.AttachDisk(*diskMounter); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	log.Printf("NodePublishVolume4")
+	klog.V(2).Infof("NodePublishVolume4 %+v\n", util)
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -96,8 +97,13 @@ func viriumHttpClient(method string, url string, jsonData []byte) ([]byte, error
 		Timeout: timeout,
 	}
 
+	authString := fmt.Sprintf("%s:%s", *api_username, *api_password)
+	authStringB64 := base64.StdEncoding.EncodeToString([]byte(authString))
+	authHeader := "Basic " + authStringB64
+
 	// Build the HTTP request manually
 	httpReq, err := http.NewRequest(method, url, bytes.NewBuffer(jsonData))
+	httpReq.Header.Set("Authorization", authHeader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
 	}

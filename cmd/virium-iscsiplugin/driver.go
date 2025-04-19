@@ -30,6 +30,8 @@ type driver struct {
 	version       string
 	endpoint      string
 	apiURL        string
+	api_username  string
+	api_password  string
 	initiatorName string
 	cap           []*csi.VolumeCapability_AccessMode
 	cscap         []*csi.ControllerServiceCapability
@@ -40,9 +42,9 @@ const (
 	driverName = "virium-iscsi.csi.k8s.io"
 )
 
-var version = "v0.1.13.6"
+var version = "v0.1.14.7"
 
-func NewDriver(nodeID, endpoint, apiURL, initiatorName string) *driver {
+func NewDriver(nodeID, endpoint, apiURL, initiatorName, api_username, api_password string) *driver {
 	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s api: %s initiator: %s", driverName, version, nodeID, endpoint, apiURL, initiatorName)
 
 	d := &driver{
@@ -52,6 +54,8 @@ func NewDriver(nodeID, endpoint, apiURL, initiatorName string) *driver {
 		endpoint:      endpoint,
 		apiURL:        apiURL,
 		initiatorName: initiatorName,
+		api_username:  api_username,
+		api_password:  api_password,
 	}
 
 	if err := os.MkdirAll(fmt.Sprintf("/var/run/%s", driverName), 0o755); err != nil {
