@@ -29,9 +29,11 @@ spec:
             - "--leader-election"
             - "--leader-election-namespace=kube-system"
             - "--extra-create-metadata=true"
+            - "--immediate-topology=true"
             - "--feature-gates=HonorPVReclaimPolicy=true"
             - "--timeout=1200s"
             - "--retry-interval-max=30m"
+            - "--node-deployment-immediate-binding=true"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -97,7 +99,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.14.7
+          image: docker.io/scaps/virium-csi-driver-iscsi:v0.1.14.8
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
