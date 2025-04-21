@@ -8,4 +8,5 @@ git tag ${TAG}
 sed -i "s/var version =.*/var version = \"${TAG}\"/g" cmd/virium-iscsiplugin/driver.go
 sed -i "s#docker.io/scaps/virium-csi-driver-iscsi.*#docker.io/scaps/virium-csi-driver-iscsi:${TAG}#g" deploy/csi-virium-daemonset.yaml
 sed -i "s/tag: .*/tag: ${TAG}/g" deploy/README.md
+sed -i "s/tag: .*/tag: ${TAG}/g" README.md
 # EOF

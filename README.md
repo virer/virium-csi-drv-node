@@ -1,21 +1,84 @@
-# Virim-iSCSI-csi-driver for Kubernetes
+# Virim iSCSI CSI Driver for Kubernetes
 
-### Overview
+## 🚀 Overview
 
-This is a repository for Virium CSI driver.
+This repository contains the **Virim CSI driver** — a Kubernetes CSI-compatible plugin that extends the functionality of the [official iSCSI CSI driver](https://github.com/kubernetes-csi/csi-driver-iscsi) to support **dynamic provisioning**.
 
-This iscsi driver extends this repository https://github.com/kubernetes-csi/csi-driver-iscsi capability.
+**CSI plugin name**: `virium.csi.virer.net`
 
-CSI plugin name: `virium.csi.virer.net`. 
+This driver works in conjunction with a running and properly configured [**Viriumd** API server](https://github.com/YOUR_USERNAME/viriumd), which handles the underlying LVM and iSCSI operations.
 
-This driver requires existing and already configured Viriumd API server.
-Virum CSI driver can dynamically create and delete volume, attach/mount, detach/unmount based on CSI GRPC calls.
-The goal of this project is to be able to also add the ability to resize volumes, create snapshot and add clone capabilities.
+---
 
-### Project status
-Project status: beta 
-Persistent Volume creation and deletion are working on a multinode cluster
+## 🔧 Features
 
-### Install driver on a Kubernetes cluster
+- Dynamic volume provisioning and deletion
+- Multi-node support
+- Attach, mount, detach, unmount workflows via CSI
+- Kubernetes native PersistentVolume (PV) lifecycle integration
 
-- Check the README.md file in the "deploy" directory
+### ⚙️ Planned Features
+
+- Volume resizing support
+- Snapshot creation
+- Volume cloning
+
+---
+
+## ⚠️ Requirements
+
+- A running instance of **Viriumd**, configured and reachable by the driver
+- iSCSI initiator configured on all cluster nodes
+- Kubernetes v1.20+ (CSI-compatible)
+
+---
+
+## 🧪 Project Status
+
+**Status:** `Beta`
+
+- ✅ Volume creation and deletion are functional on multi-node Kubernetes clusters
+- 🚧 Feature expansion (resizing, snapshots, cloning) in active development
+
+---
+
+## 📚 References
+
+- [Viriumd API server](https://github.com/virer/viriumd)
+- [Kubernetes CSI Documentation](https://kubernetes-csi.github.io/docs/)
+- [csi-driver-iscsi (upstream)](https://github.com/kubernetes-csi/csi-driver-iscsi)
+
+---
+
+## 🤝 Contributions
+
+This project is open for testing, feedback, and contributions
+
+# Installation:
+
+For installation please use helm charts (files located here are for dev usage)
+
+Create a values.yaml 
+```
+virium:
+  virium:
+    image:
+      repository: docker.io/scaps/virium-csi-driver-iscsi
+      tag: v0.2.1.3
+  nodeSelector:
+    kubernetes.io/os: linux
+viriumConfig:
+  apiUsername: "virium_api_username"
+  apiPassword: "virium_api_password"
+  apiurl: "http://192.168.0.147:8787"
+  initiator: "iqn.2025-04.net.virer.virium:target1"
+  debug: "2"
+```
+
+Then configure the helm repository and deploy the charts
+```
+helm repo add virium https://virer.github.io/virium-helm-repo/charts/
+helm repo update
+helm search repo virium
+helm install a1 virium --namespace=virium --create-namespace -f values.yaml 
+```
