@@ -6,7 +6,7 @@ This repository contains the **Virim CSI driver** — a Kubernetes CSI-compatibl
 
 **CSI plugin name**: `virium.csi.virer.net`
 
-This driver works in conjunction with a running and properly configured [**Viriumd** API server](https://github.com/YOUR_USERNAME/viriumd), which handles the underlying LVM and iSCSI operations.
+This driver works in conjunction with a running and properly configured [**Viriumd** API server](https://github.com/virer/viriumd), which handles the underlying LVM and iSCSI operations.
 
 ---
 
