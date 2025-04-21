@@ -8,12 +8,14 @@ This iscsi driver extends this repository https://github.com/kubernetes-csi/csi-
 
 CSI plugin name: `virium.csi.virer.net`. 
 
-This driver requires existing and already configured Virium server.
-And could dynamically attach/mount, detach/unmount based on CSI GRPC calls, goal of this project is to be able to create, resize and delete volume, create snapshot and add clone capabilities
+This driver requires existing and already configured Viriumd API server.
+Virum CSI driver can dynamically create and delete volume, attach/mount, detach/unmount based on CSI GRPC calls.
+The goal of this project is to be able to also add the ability to resize volumes, create snapshot and add clone capabilities.
 
 ### Project status
-Project status: ultra early alpha
+Project status: beta 
+Persistent Volume creation and deletion are working on a multinode cluster
 
 ### Install driver on a Kubernetes cluster
 
-- Check "docs" directory
+- Check the README.md file in the "deploy" directory

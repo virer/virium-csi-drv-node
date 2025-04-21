@@ -70,7 +70,7 @@ change below config, e.g.
 
 ```
 
-#### Get more details about the ISCSI CSI driver object
+#### Get more details about the vitium CSI driver object
 
 One can list the CSI driver object as shown below.
 
