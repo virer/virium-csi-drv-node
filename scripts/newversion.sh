@@ -6,5 +6,5 @@ echo "SWitch to version ${TAG}"
 echo ${TAG} > VERSION
 git tag ${TAG}
 sed -i "s/var version =.*/var version = \"${TAG}\"/g" cmd/virium-iscsiplugin/driver.go
-sed -i "s#docker.io/scaps/virium-csi-driver-iscsi.*#docker.io/scaps/virium-csi-driver-iscsi:${TAG}#g" deploy/csi-iscsi-daemonset.yaml
+sed -i "s#docker.io/scaps/virium-csi-driver-iscsi.*#docker.io/scaps/virium-csi-driver-iscsi:${TAG}#g" deploy/csi-virium-daemonset.yaml
 # EOF

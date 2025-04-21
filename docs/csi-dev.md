@@ -39,7 +39,7 @@ $ ./_output/virium-iscsiplugin --endpoint tcp://127.0.0.1:10000 --nodeid CSINode
 
 ```console
 $ csc identity plugin-info --endpoint "$endpoint"
-"virium-iscsi.csi.k8s.io"    "v2.0.0"
+"virium.csi.virer.net"    "v2.0.0"
 ```
 
 - Publish an iscsi volume
