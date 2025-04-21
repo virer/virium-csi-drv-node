@@ -26,3 +26,8 @@ helm repo update
 helm search repo virium
 helm install a1 virium --namespace=virium --create-namespace -f values.yaml 
 ```
+
+### Tricks for RHOCP
+```
+kubectl patch --type merge -p '{"spec": {"claimPropertySets": [{"accessModes": ["ReadWriteOnce"]}]}}' StorageProfile virium
+```

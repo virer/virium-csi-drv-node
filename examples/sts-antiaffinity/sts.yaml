@@ -6,6 +6,7 @@ metadata:
     run: nginx
   name: nginx
 spec:
+  podManagementPolicy: Parallel
   replicas: 3
   selector:
     matchLabels:
