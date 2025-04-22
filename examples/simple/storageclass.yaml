@@ -4,3 +4,4 @@ kind: StorageClass
 metadata:
   name: virium
 provisioner: virium.csi.virer.net
+allowVolumeExpansion: true

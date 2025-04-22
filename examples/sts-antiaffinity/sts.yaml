@@ -30,7 +30,7 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 100
       containers:
-      - image: nginx
+      - image: bitnami/nginx:latest
         name: nginx
         resources:
           limits:

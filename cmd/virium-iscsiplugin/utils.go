@@ -92,7 +92,7 @@ func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) error {
 func viriumHttpClient(method string, url string, jsonData []byte) ([]byte, error) {
 	// Step 2: Make the HTTP POST request
 	// Create custom HTTP client with timeout
-	timeout := time.Duration(50 * time.Second)
+	timeout := time.Duration(300 * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
 	}

@@ -64,7 +64,7 @@ virium:
   virium:
     image:
       repository: docker.io/scaps/virium-csi-driver-iscsi
-      tag: v0.2.1.5
+      tag: v0.2.2.5
   nodeSelector:
     kubernetes.io/os: linux
 viriumConfig:
@@ -81,4 +81,25 @@ helm repo add virium https://virer.github.io/virium-helm-repo/charts/
 helm repo update
 helm search repo virium
 helm install a1 virium --namespace=virium --create-namespace -f values.yaml 
+```
+
+Then use the following storageClass:
+
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: virium
+provisioner: virium.csi.virer.net
+allowVolumeExpansion: true
+```
+
+And use the following as snapshotClass:
+```
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-virium-snapclass
+driver: virium.csi.virer.net
+deletionPolicy: Delete
 ```

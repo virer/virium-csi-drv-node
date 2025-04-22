@@ -34,10 +34,26 @@ type ControllerServer struct {
 	csi.UnimplementedControllerServer
 }
 
+// Volume Request :
 type VolumeRequest struct {
-	InitiatorName string `json:"initiator_name"`
-	Capacity      int64  `json:"capacity"`
+	InitiatorName string               `json:"initiator_name"`
+	Capacity      int64                `json:"capacity"`
+	ContentSource *VolumeContentSource `json:"content_source,omitempty"`
 }
+type VolumeContentSource struct {
+	Type struct {
+		Snapshot *SnapshotSource `json:"Snapshot,omitempty"`
+		Volume   *VolumeSource   `json:"Volume,omitempty"`
+	} `json:"Type"`
+}
+type SnapshotSource struct {
+	SnapshotID string `json:"snapshot_id"`
+}
+type VolumeSource struct {
+	VolumeID string `json:"volume_id"`
+}
+
+// Volume Request ^^
 
 type VolumeResponse struct {
 	VolumeID          string `json:"volume_id"`
@@ -58,11 +74,13 @@ type VolumeResizeRequest struct {
 }
 
 type SnapshotRequest struct {
-	VolumeID string `json:"volume_id"`
+	Name     string `json:"name"`
+	VolumeID string `json:"source_volume_id"`
 }
 
 type SnapshotResponse struct {
 	VolumeID string `json:"snapshot_id"`
+	Capacity int64  `json:"capacity"`
 }
 
 type DeleteSnapshotRequest struct {
@@ -78,6 +96,33 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		InitiatorName: cs.Driver.initiatorName,
 		Capacity:      req.CapacityRange.RequiredBytes,
 	}
+	src := req.VolumeContentSource
+	if src != nil {
+		klog.V(5).Info("Content source requested", src)
+		switch src := req.VolumeContentSource.Type.(type) {
+		case *csi.VolumeContentSource_Snapshot:
+			payload.ContentSource = &VolumeContentSource{
+				Type: struct {
+					Snapshot *SnapshotSource `json:"Snapshot,omitempty"`
+					Volume   *VolumeSource   `json:"Volume,omitempty"`
+				}{
+					Snapshot: &SnapshotSource{SnapshotID: src.Snapshot.SnapshotId},
+				},
+			}
+		case *csi.VolumeContentSource_Volume:
+			payload.ContentSource = &VolumeContentSource{
+				Type: struct {
+					Snapshot *SnapshotSource `json:"Snapshot,omitempty"`
+					Volume   *VolumeSource   `json:"Volume,omitempty"`
+				}{
+					Volume: &VolumeSource{VolumeID: src.Volume.VolumeId},
+				},
+			}
+		default:
+			fmt.Println("ContentSource Unknown type:", src)
+		}
+	}
+
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %v", err)
@@ -100,7 +145,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	klog.V(1).Info("Volume created successfully", req.Name)
 
 	// Step 4: Return CSI-compatible volume response
-	return &csi.CreateVolumeResponse{
+	ret_value := &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volResp.VolumeID,
 			CapacityBytes: req.CapacityRange.RequiredBytes,
@@ -114,7 +159,19 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 				"sessionCHAPAuth":   volResp.SessionCHAPAuth,
 			},
 		},
-	}, nil
+	}
+	if src != nil {
+		ret_value.Volume.ContentSource = &csi.VolumeContentSource{
+			Type: &csi.VolumeContentSource_Volume{
+				Volume: &csi.VolumeContentSource_VolumeSource{
+					VolumeId: src.GetVolume().GetVolumeId(),
+				},
+			},
+		}
+	}
+
+	klog.V(1).Infof("Volume creation payload %+v\n", ret_value)
+	return ret_value, nil
 
 }
 
@@ -192,7 +249,8 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/snapshot/create", cs.Driver.apiURL)
 	payload := SnapshotRequest{
-		VolumeID: req.Name,
+		VolumeID: req.SourceVolumeId,
+		Name:     req.Name,
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
@@ -216,21 +274,24 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 			SourceVolumeId: req.Name,
 			CreationTime:   timestamppb.Now(),
 			ReadyToUse:     true,
+			SizeBytes:      volResp.Capacity,
 		},
 	}, nil
 }
 
 func (cs *ControllerServer) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
-	snapshotID := req.GetSnapshotId()
-	if snapshotID == "" {
-		return nil, fmt.Errorf("snapshot ID is required")
+	klog.V(5).Infof("Delete snap req: %+v", req)
+	klog.V(5).Infof("Delete snap snapId %s", req.SnapshotId)
+	klog.V(5).Infof("Delete snap Secret %+v", req.GetSecrets())
+	if len(req.GetSnapshotId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Snapshot ID is required for deletion")
 	}
-	klog.V(1).Info("Deleting Volume via API:", snapshotID)
+	klog.V(1).Info("Deleting Volume via API:", req.SnapshotId)
 
 	// Step 1: Prepare request payload
 	apiURL := fmt.Sprintf("%s/api/snapshot/delete", cs.Driver.apiURL)
 	payload := DeleteSnapshotRequest{
-		SnapshotID: snapshotID,
+		SnapshotID: req.SnapshotId,
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
@@ -242,7 +303,7 @@ func (cs *ControllerServer) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 		return nil, fmt.Errorf("API request failed: %v", err)
 	}
 
-	klog.V(1).Info("Snapshot successfully deleted:", snapshotID)
+	klog.V(1).Info("Snapshot successfully deleted:", req.SnapshotId)
 	return &csi.DeleteSnapshotResponse{}, nil
 }
 
