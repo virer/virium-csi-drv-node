@@ -8,7 +8,7 @@ virium:
   virium:
     image:
       repository: docker.io/scaps/virium-csi-driver-iscsi
-      tag: v0.2.1.3
+      tag: v0.2.1.5
   nodeSelector:
     kubernetes.io/os: linux
 viriumConfig:

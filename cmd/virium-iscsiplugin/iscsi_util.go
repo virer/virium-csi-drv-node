@@ -84,6 +84,17 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		klog.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, b.fsType, mntPath, err)
 	}
 
+	klog.V(5).Info("Changing permission on", mntPath)
+	err = os.Chmod(mntPath, 0o777)
+	if err != nil {
+		klog.Errorf("failed to change mount path %s permission for volume %s: %v", mntPath, b.VolName, err)
+	}
+	err = os.Chmod(mntPath+"/lost+found", 0o755)
+	if err != nil {
+		klog.Errorf("failed to change mount path %s permission for volume %s: %v", mntPath, b.VolName, err)
+	}
+	klog.V(5).Info("Changed permission on", mntPath)
+
 	return devicePath, err
 }
 
