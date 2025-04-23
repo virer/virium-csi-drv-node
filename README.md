@@ -56,7 +56,7 @@ This project is open for testing, feedback, and contributions
 
 # Installation:
 
-For installation please use helm charts (files located here are for dev usage)
+For installation please use helm charts
 
 Create a values.yaml 
 ```
@@ -64,7 +64,7 @@ virium:
   virium:
     image:
       repository: docker.io/scaps/virium-csi-driver-iscsi
-      tag: v0.2.2.6
+      tag: v0.2.2.9
   nodeSelector:
     kubernetes.io/os: linux
 viriumConfig:

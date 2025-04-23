@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package controller
 
 import (
 	"flag"
@@ -25,8 +25,10 @@ import (
 
 var (
 	endpoint      = flag.String("endpoint", "unix:///csi/csi.sock", "CSI endpoint")
-	nodeID        = flag.String("nodeid", "", "node id")
+	apiURL        = flag.String("apiurl", "http://virium-isci-fqdn.domain.tld:8787", "Virium api url")
 	initiatorName = flag.String("initiatorname", "iqn.2025-04.net.virer.virium:target1", "iSCSI initiator name identifier")
+	api_username  = flag.String("api_username", "", "api_username")
+	api_password  = flag.String("api_password", "", "api_password")
 )
 
 func main() {
@@ -38,6 +40,6 @@ func main() {
 }
 
 func handle() {
-	d := NewDriver(*nodeID, *endpoint, *initiatorName)
+	d := NewDriver(*endpoint, *apiURL, *initiatorName, *api_username, *api_password)
 	d.Run()
 }

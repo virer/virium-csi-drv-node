@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package controller
 
 import (
 	"fmt"
@@ -29,8 +29,12 @@ type driver struct {
 	nodeID        string
 	version       string
 	endpoint      string
+	apiURL        string
+	api_username  string
+	api_password  string
 	initiatorName string
 	cap           []*csi.VolumeCapability_AccessMode
+	cscap         []*csi.ControllerServiceCapability
 	nscap         []*csi.NodeServiceCapability
 }
 
@@ -38,17 +42,19 @@ const (
 	driverName = "virium.csi.virer.net"
 )
 
-var version = "v0.2.2.9"
+var version = "v0.2.2.7"
 
-func NewDriver(nodeID, endpoint, initiatorName string) *driver {
-	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s initiator: %s", driverName, version, nodeID, endpoint, initiatorName)
+func NewDriver(endpoint, apiURL, initiatorName, api_username, api_password string) *driver {
+	klog.V(1).Infof("driver: %s version: %s endpoint: %s api: %s initiator: %s", driverName, version, endpoint, apiURL, initiatorName)
 
 	d := &driver{
 		name:          driverName,
 		version:       version,
-		nodeID:        nodeID,
 		endpoint:      endpoint,
+		apiURL:        apiURL,
 		initiatorName: initiatorName,
+		api_username:  api_username,
+		api_password:  api_password,
 	}
 
 	if err := os.MkdirAll(fmt.Sprintf("/var/run/%s", driverName), 0o755); err != nil {
@@ -56,13 +62,16 @@ func NewDriver(nodeID, endpoint, initiatorName string) *driver {
 	}
 	d.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER})
 
-	return d
-}
+	d.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+		csi.ControllerServiceCapability_RPC_SINGLE_NODE_MULTI_WRITER,
+		csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
+	})
 
-func NewNodeServer(d *driver) *nodeServer {
-	return &nodeServer{
-		Driver: d,
-	}
+	return d
 }
 
 func (d *driver) Run() {
@@ -71,8 +80,8 @@ func (d *driver) Run() {
 		NewDefaultIdentityServer(d),
 		// iSCSI plugin has not implemented ControllerServer
 		// using default controllerserver.
-		nil,
-		NewNodeServer(d))
+		NewControllerServer(d),
+		nil)
 	s.Wait()
 }
 
@@ -84,4 +93,15 @@ func (d *driver) AddVolumeCapabilityAccessModes(vc []csi.VolumeCapability_Access
 	}
 	d.cap = vca
 	return vca
+}
+
+func (d *driver) AddControllerServiceCapabilities(cl []csi.ControllerServiceCapability_RPC_Type) {
+	var csc []*csi.ControllerServiceCapability
+
+	for _, c := range cl {
+		klog.Infof("enabling controller service capability: %v", c.String())
+		csc = append(csc, NewControllerServiceCapability(c))
+	}
+
+	d.cscap = csc
 }
