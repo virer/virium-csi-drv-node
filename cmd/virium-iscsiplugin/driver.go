@@ -38,7 +38,7 @@ const (
 	driverName = "virium.csi.virer.net"
 )
 
-var version = "v0.2.2.9"
+var version = "v0.2.3.3"
 
 func NewDriver(nodeID, endpoint, initiatorName string) *driver {
 	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s initiator: %s", driverName, version, nodeID, endpoint, initiatorName)
@@ -69,8 +69,6 @@ func (d *driver) Run() {
 	s := NewNonBlockingGRPCServer()
 	s.Start(d.endpoint,
 		NewDefaultIdentityServer(d),
-		// iSCSI plugin has not implemented ControllerServer
-		// using default controllerserver.
 		nil,
 		NewNodeServer(d))
 	s.Wait()

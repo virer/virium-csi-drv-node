@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package main
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ const (
 	driverName = "virium.csi.virer.net"
 )
 
-var version = "v0.2.2.7"
+var version = "v0.2.3.3"
 
 func NewDriver(endpoint, apiURL, initiatorName, api_username, api_password string) *driver {
 	klog.V(1).Infof("driver: %s version: %s endpoint: %s api: %s initiator: %s", driverName, version, endpoint, apiURL, initiatorName)
@@ -78,8 +78,6 @@ func (d *driver) Run() {
 	s := NewNonBlockingGRPCServer()
 	s.Start(d.endpoint,
 		NewDefaultIdentityServer(d),
-		// iSCSI plugin has not implemented ControllerServer
-		// using default controllerserver.
 		NewControllerServer(d),
 		nil)
 	s.Wait()
