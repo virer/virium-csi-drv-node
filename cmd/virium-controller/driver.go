@@ -26,7 +26,6 @@ import (
 
 type driver struct {
 	name          string
-	nodeID        string
 	version       string
 	endpoint      string
 	apiURL        string
@@ -35,14 +34,13 @@ type driver struct {
 	initiatorName string
 	cap           []*csi.VolumeCapability_AccessMode
 	cscap         []*csi.ControllerServiceCapability
-	nscap         []*csi.NodeServiceCapability
 }
 
 const (
 	driverName = "virium.csi.virer.net"
 )
 
-var version = "v0.2.3.3"
+var version = "v0.2.3.4"
 
 func NewDriver(endpoint, apiURL, initiatorName, api_username, api_password string) *driver {
 	klog.V(1).Infof("driver: %s version: %s endpoint: %s api: %s initiator: %s", driverName, version, endpoint, apiURL, initiatorName)
