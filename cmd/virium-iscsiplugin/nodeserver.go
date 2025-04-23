@@ -39,20 +39,20 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if len(req.GetTargetPath()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "targetPath not provided")
 	}
-	klog.V(2).Infof("NodePublishVolume1 %+v\n", req)
+	klog.V(5).Infof("NodePublishVolume1 %+v\n", req)
 	iscsiInfo, err := getISCSIInfo(req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	klog.V(2).Infof("%+v\n", iscsiInfo)
+	klog.V(5).Infof("%+v\n", iscsiInfo)
 	diskMounter := getISCSIDiskMounter(iscsiInfo, req)
-	klog.V(2).Infof("NodePublishVolume3 %+v\n", diskMounter)
+	klog.V(5).Infof("NodePublishVolume3 %+v\n", diskMounter)
 
 	util := &ISCSIUtil{}
 	if _, err := util.AttachDisk(*diskMounter); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	klog.V(2).Infof("NodePublishVolume4 %+v\n", util)
+	klog.V(5).Infof("NodePublishVolume4 %+v\n", util)
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

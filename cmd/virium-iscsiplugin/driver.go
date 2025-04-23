@@ -42,7 +42,7 @@ const (
 	driverName = "virium.csi.virer.net"
 )
 
-var version = "v0.2.2.5"
+var version = "v0.2.2.6"
 
 func NewDriver(nodeID, endpoint, apiURL, initiatorName, api_username, api_password string) *driver {
 	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s api: %s initiator: %s", driverName, version, nodeID, endpoint, apiURL, initiatorName)
@@ -69,6 +69,7 @@ func NewDriver(nodeID, endpoint, apiURL, initiatorName, api_username, api_passwo
 		csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
 	})
 
 	return d

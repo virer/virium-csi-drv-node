@@ -4,7 +4,7 @@ kind: CSIDriver
 metadata:
   name: virium.csi.virer.net
 spec:
-  attachRequired: false
+  attachRequired: true
   volumeLifecycleModes:
     - Persistent
     - Ephemeral
