@@ -5,7 +5,6 @@ TAG=$( cat VERSION | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)
 echo "SWitch to version ${TAG}"
 echo ${TAG} > VERSION
 git tag ${TAG}
-sed -i "s/var version =.*/var version = \"${TAG}\"/g" cmd/virium-controller/driver.go
 sed -i "s/var version =.*/var version = \"${TAG}\"/g" cmd/virium-iscsiplugin/driver.go
 sed -i "s/tag: .*/tag: ${TAG}/g" README.md
 # EOF
